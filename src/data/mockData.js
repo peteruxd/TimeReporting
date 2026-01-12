@@ -5,48 +5,40 @@ export const MOCK_USER = {
     avatar: "https://ui.avatars.com/api/?name=Alex+Designer&background=2563eb&color=fff"
 };
 
-const PAST_WEEKS = [
-    {
-        id: "w-2025-52",
-        startDate: "2025-12-25",
-        endDate: "2025-12-31",
-        status: "submitted",
-        confidence: "High",
-        summary: "End of year wrap up, focus on Q1 planning.",
-        projects: [
-            { name: "Time Reporting App", allocation: 40, color: "bg-blue-500" },
-            { name: "Design System", allocation: 60, color: "bg-purple-500" }
-        ],
-        meetings: { totalDuration: 12.0 } // 40 - 12 = 28 Focus Hours
-    },
-    {
-        id: "w-2025-51",
-        startDate: "2025-12-18",
-        endDate: "2025-12-24",
-        status: "submitted",
-        confidence: "Medium",
-        summary: "Heavy meeting week, mostly interviewing.",
-        projects: [
-            { name: "Recruiting", allocation: 50, color: "bg-green-500" },
-            { name: "Time Reporting App", allocation: 30, color: "bg-blue-500" },
-            { name: "Admin", allocation: 20, color: "bg-slate-400" }
-        ],
-        meetings: { totalDuration: 22.5 } // 40 - 22.5 = 17.5 Focus Hours
-    },
-    {
-        id: "w-2025-50",
-        startDate: "2025-12-11",
-        endDate: "2025-12-17",
-        status: "submitted",
-        confidence: "High",
-        summary: "Heads down coding week.",
-        projects: [
-            { name: "Time Reporting App", allocation: 80, color: "bg-blue-500" },
-            { name: "Admin", allocation: 20, color: "bg-slate-400" }
-        ],
-        meetings: { totalDuration: 8.0 } // 40 - 8 = 32 Focus Hours
+const generatePastWeeks = () => {
+    const weeks = [];
+    const baseDate = new Date("2025-12-25"); // Start from week 52 backwards
+
+    for (let i = 0; i < 11; i++) { // Generate 11 past weeks to make 12 total with draft
+        const start = new Date(baseDate);
+        start.setDate(baseDate.getDate() - (i * 7));
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+
+        const weekNum = 52 - i;
+        const id = `w-2025-${weekNum.toString().padStart(2, '0')}`;
+
+        // Randomize meeting hours between 5 and 25
+        const meetingHours = Math.floor(Math.random() * 20) + 5;
+
+        weeks.push({
+            id,
+            startDate: start.toISOString().split('T')[0],
+            endDate: end.toISOString().split('T')[0],
+            status: "submitted",
+            confidence: ["High", "Medium"][Math.floor(Math.random() * 2)],
+            summary: `Weekly report for Week ${weekNum}`,
+            projects: [
+                { name: "Time Reporting App", allocation: 40, color: "bg-blue-500" },
+                { name: "Design System", allocation: 60, color: "bg-purple-500" }
+            ],
+            meetings: { totalDuration: meetingHours }
+        });
     }
-];
+    return weeks;
+};
+
+const PAST_WEEKS = generatePastWeeks();
 
 export const DRAFT_WEEK = {
     id: "w-2026-01",

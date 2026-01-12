@@ -1,6 +1,6 @@
 import { INITIAL_DB_STATE } from "../data/mockData";
 
-const DB_KEY = "timereporting_db_v1";
+const DB_KEY = "timereporting_db_v2";
 
 export const db = {
     init: () => {

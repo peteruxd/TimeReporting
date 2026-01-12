@@ -13,18 +13,28 @@ export default function Dashboard() {
         setEntries(db.getEntries());
     }, []);
 
+    // Helper to format date YYYY-MM-DD to MMMDD
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        return `${months[parseInt(parts[1]) - 1]}${parts[2]}`;
+    };
+
     // Prepare chart data: Project allocation trends for submitted weeks
     const chartData = entries
         .filter(e => e.status === 'submitted')
-        .slice(0, 4) // Last 4 entries
+        .slice(0, 12) // Last 12 entries
         .reverse()
         .map(entry => {
             const meetingHours = entry.meetings?.totalDuration || 0;
             // Assume 40h standard work week for focus calculation
             const focusHours = Math.max(0, 40 - meetingHours);
+            const label = `${formatDate(entry.startDate)}-${formatDate(entry.endDate)}`;
 
             return {
-                name: `Week ${entry.id.split('-')[2]}`,
+                name: label,
                 focusHours: focusHours,
                 meetings: meetingHours
             };
@@ -42,51 +52,50 @@ export default function Dashboard() {
                 </Link>
             </div>
 
-            {/* Stats / Insights Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-blue-500" />
-                            Focus Trend
-                        </h3>
-                        <span className="text-xs text-slate-400">Based on Calendar</span>
-                    </div>
-                    <div className="h-48 w-full">
-                        {chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData}>
-                                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                                    <Tooltip
-                                        cursor={{ fill: 'transparent' }}
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    />
-                                    <Bar dataKey="focusHours" fill="#3b82f6" radius={[4, 4, 0, 0]}>
-                                        {chartData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#2563eb' : '#93c5fd'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-slate-400 text-sm">
-                                No data yet
-                            </div>
-                        )}
-                    </div>
+            {/* Insight Card (Moved Above) */}
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl shadow-sm text-white relative overflow-hidden">
+                <div className="relative z-10">
+                    <h3 className="font-semibold text-white/90 mb-1">Weekly Insight</h3>
+                    <p className="text-2xl font-bold mb-4">Design System Focus</p>
+                    <p className="text-white/80 text-sm leading-relaxed mb-6">
+                        You've spent 25% more time on "Design System" compared to last month. Consider whether this aligns with your quarterly goals.
+                    </p>
                 </div>
+                <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+                    <TrendingUp className="w-48 h-48" />
+                </div>
+            </div>
 
-                <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl shadow-sm text-white relative overflow-hidden">
-                    <div className="relative z-10">
-                        <h3 className="font-semibold text-white/90 mb-1">Weekly Insight</h3>
-                        <p className="text-2xl font-bold mb-4">Design System Focus</p>
-                        <p className="text-white/80 text-sm leading-relaxed mb-6">
-                            You've spent 25% more time on "Design System" compared to last month. Consider whether this aligns with your quarterly goals.
-                        </p>
-                    </div>
-                    <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
-                        <TrendingUp className="w-48 h-48" />
-                    </div>
+            {/* Stats / Focus Trend (Full width for 12 weeks) */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-blue-500" />
+                        Focus Trend (Last 12 Weeks)
+                    </h3>
+                    <span className="text-xs text-slate-400">Based on Calendar</span>
+                </div>
+                <div className="h-64 w-full"> {/* Increased height slightly */}
+                    {chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
+                                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} interval={0} />
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                />
+                                <Bar dataKey="focusHours" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#2563eb' : '#93c5fd'} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                            No data yet
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -97,7 +106,7 @@ export default function Dashboard() {
                     <ul className="divide-y divide-slate-100">
                         {entries.map((entry) => (
                             <li key={entry.id} className="hover:bg-slate-50 transition-colors">
-                                <Link to={entry.status === 'draft' ? `/entry/${entry.id}` : '#'} className="block px-6 py-4">
+                                <Link to={`/entry/${entry.id}`} className="block px-6 py-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center">
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${entry.status === 'draft' ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>

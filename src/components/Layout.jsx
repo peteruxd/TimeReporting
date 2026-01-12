@@ -15,7 +15,7 @@ export default function Layout() {
 
     const navItems = [
         { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-        { name: 'Review Entry', icon: PenTool, path: '/entry/current' },
+        { name: 'Review a Week', icon: PenTool, path: '/entry/current' },
     ];
 
     return (

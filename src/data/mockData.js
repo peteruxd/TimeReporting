@@ -1,8 +1,8 @@
 export const MOCK_USER = {
     id: "u1",
-    name: "Alex Designer",
-    email: "alex@example.com",
-    avatar: "https://ui.avatars.com/api/?name=Alex+Designer&background=2563eb&color=fff"
+    name: "Peter",
+    email: "peter@example.com",
+    avatar: "https://ui.avatars.com/api/?name=Peter&background=2563eb&color=fff"
 };
 
 const generatePastWeeks = () => {
@@ -37,7 +37,7 @@ const generatePastWeeks = () => {
                 autoNotes: []
             },
             allocations: [
-                { id: `p1-${i}`, name: "Time Reporting App", percentage: 40, color: "bg-blue-500" },
+                { id: `p1-${i}`, name: "TimeInsights App", percentage: 40, color: "bg-blue-500" },
                 { id: `p2-${i}`, name: "Design System", percentage: 60, color: "bg-purple-500" }
             ],
             meetings: {
@@ -67,7 +67,7 @@ export const DRAFT_WEEK = {
     confidence: "Medium",
     aiNote: "Estimated from reflection and calendar",
     narrative: {
-        text: "I spent most of the week deep diving into the new Time Reporting project. I feels like Project 2 took longer than expected because of the complexity in the reviews. Also had a lot of design syncs.",
+        text: "I spent most of the week deep diving into the new TimeInsights project. I feels like Project 2 took longer than expected because of the complexity in the reviews. Also had a lot of design syncs.",
         wentWell: "Made good progress on the core architecture.",
         couldBeBetter: "Meetings interrupted deep work sessions frequently.",
         happinessScore: 7,
@@ -82,7 +82,7 @@ export const DRAFT_WEEK = {
         ]
     },
     allocations: [
-        { id: "p1", name: "Time Reporting App", percentage: 40, color: "bg-blue-500", isOverrun: false },
+        { id: "p1", name: "TimeInsights App", percentage: 40, color: "bg-blue-500", isOverrun: false },
         { id: "p2", name: "Design System", percentage: 40, color: "bg-purple-500", isOverrun: true, warning: "Took longer than expected" },
         { id: "p3", name: "Internal Infra", percentage: 20, color: "bg-indigo-500", isOverrun: false }
     ],

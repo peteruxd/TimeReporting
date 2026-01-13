@@ -91,7 +91,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.name.split(' ')[0]}</h1>
-                    <p className="text-slate-500">Here's your time reporting overview.</p>
+                    <p className="text-slate-500">Here's your insights overview.</p>
                 </div>
                 <Link to="/entry/current" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors">
                     Create New Entry

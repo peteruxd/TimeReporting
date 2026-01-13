@@ -48,7 +48,7 @@ export default function LoginScreen() {
                     Sign in to your account
                 </h2>
                 <p className="mt-2 text-center text-sm text-slate-600">
-                    Conversational Time Reporting
+                    TimeInsights
                 </p>
             </div>
 

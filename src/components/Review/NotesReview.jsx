@@ -48,8 +48,8 @@ export default function NotesReview({ notes, wentWell, couldBeBetter, happinessS
                     <label className="block text-sm font-medium text-slate-700">
                         Happiness Index (1-10)
                     </label>
-                    <div className="overflow-x-auto pb-2">
-                        <div className="flex justify-center gap-2 min-w-max px-2">
+                    <div className="overflow-x-auto pb-2 pt-2">
+                        <div className="flex justify-center gap-2 min-w-max px-2 py-1">
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
                                 const isSelected = happinessScore === num;
                                 let bgColor = 'bg-slate-100 hover:bg-slate-200';

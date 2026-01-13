@@ -235,45 +235,62 @@ export default function Dashboard() {
                     </h3>
                 </div>
                 <div className="divide-y divide-slate-100">
-                    {recentEntries.map(entry => (
-                        <div key={entry.id}>
-                            <Link to={`/entry/${entry.id}`} className="block px-6 py-4 hover:bg-slate-50 transition-colors group">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 rounded-full ${entry.status === 'submitted' ? 'bg-green-500' : 'bg-amber-500'}`} />
-                                        <span className="font-medium text-slate-900">
-                                            {formatDateRange(entry.startDate, entry.endDate)}
-                                        </span>
-                                        {entry.status === 'draft' && (
-                                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Draft</span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        {/* Happiness Score Indicator */}
-                                        {entry.narrative?.happinessScore && (
-                                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold
-                                                ${entry.narrative.happinessScore <= 3 ? 'bg-red-50 text-red-700' :
-                                                    entry.narrative.happinessScore <= 6 ? 'bg-orange-50 text-orange-700' :
-                                                        entry.narrative.happinessScore <= 8 ? 'bg-yellow-50 text-yellow-700' :
-                                                            'bg-green-50 text-green-700'
-                                                }
-                                            `}>
-                                                <span>Score: {entry.narrative.happinessScore}</span>
+                    {recentEntries.map(entry => {
+                        // Calculate total allocation for this entry
+                        const workingHours = 40;
+                        const projectHours = entry.allocations?.reduce((sum, item) => sum + (item.hours || 0), 0) || 0;
+                        const meetingHours = entry.meetings?.totalDuration || 0;
+                        const totalAllocation = ((projectHours + meetingHours) / workingHours) * 100;
+                        const isOverAllocated = totalAllocation > 100;
+
+                        return (
+                            <div key={entry.id}>
+                                <Link to={`/entry/${entry.id}`} className="block px-6 py-4 hover:bg-slate-50 transition-colors group">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium text-slate-900">{formatDateRange(entry.startDate, entry.endDate)}</span>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${entry.status === 'submitted'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
+                                                    }`}>
+                                                    {entry.status === 'submitted' ? 'Submitted' : 'Draft'}
+                                                </span>
                                             </div>
-                                        )}
-                                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                            {entry.narrative?.text && (
+                                                <p className="mt-1 text-xs text-slate-500 line-clamp-1">
+                                                    {entry.narrative.text.substring(0, 80)}...
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-3 ml-4">
+                                            {/* Total Allocation */}
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-xs text-slate-400">Allocation:</span>
+                                                <span className={`text-sm font-semibold ${isOverAllocated ? 'text-red-600' : 'text-green-600'}`}>
+                                                    {totalAllocation.toFixed(0)}%
+                                                </span>
+                                            </div>
+                                            {/* Happiness Score */}
+                                            {entry.narrative?.happinessScore && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-xs text-slate-400">Happiness:</span>
+                                                    <span className={`text-sm font-semibold ${entry.narrative.happinessScore <= 3 ? 'text-red-600' :
+                                                            entry.narrative.happinessScore <= 6 ? 'text-orange-600' :
+                                                                entry.narrative.happinessScore <= 8 ? 'text-yellow-600' :
+                                                                    'text-green-600'
+                                                        }`}>
+                                                        {entry.narrative.happinessScore}/10
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                {/* Truncated Reflection Text */}
-                                {entry.narrative?.text && (
-                                    <p className="text-sm text-slate-500 pl-5 line-clamp-1">
-                                        {truncateText(entry.narrative.text, 80)}
-                                    </p>
-                                )}
-                            </Link>
-                        </div>
-                    ))}
-                    {entries.length === 0 && (
+                                </Link>
+                            </div>
+                        );
+                    })}
+                    {recentEntries.length === 0 && (
                         <div className="p-8 text-center text-slate-500 text-sm">
                             No entries found. Create your first weekly report!
                         </div>

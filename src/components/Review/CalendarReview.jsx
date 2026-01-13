@@ -111,25 +111,50 @@ export default function CalendarReview({ meetings, onChange }) {
         setNewCategoryHours('');
     };
 
+    // Calculate hours for summary
+    const workingHours = 40;
+    const meetingHours = meetings.totalDuration || 0;
+    const focusHours = Math.max(0, workingHours - meetingHours);
+
+    const handleFetchCalendar = () => {
+        // TODO: Implement Google Calendar API integration
+        alert('Calendar fetch functionality will be implemented here. This will connect to Google Calendar API to fetch meeting data.');
+    };
+
     return (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6">Calendar Review</h3>
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-900">Calendar Review</h3>
+                <button
+                    onClick={handleFetchCalendar}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Fetch from Calendar
+                </button>
+            </div>
             <div className="space-y-6">
                 {/* Summary Header */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
-                        <span className="text-xs text-slate-500 uppercase tracking-wide block mb-1">Total Time</span>
+                        <span className="text-xs text-slate-500 uppercase tracking-wide block mb-1">Working Hours</span>
                         <span className="text-xl font-bold text-slate-900 flex items-center gap-2">
                             <Clock className="w-5 h-5 text-blue-500" />
-                            {typeof meetings.totalDuration === 'number' ? meetings.totalDuration.toFixed(1) : meetings.totalDuration}h
+                            {workingHours.toFixed(1)}h
                         </span>
                     </div>
-                    {Object.entries(meetings.categories).slice(0, 3).map(([cat, hours]) => (
-                        <div key={cat}>
-                            <span className="text-xs text-slate-500 uppercase tracking-wide block mb-1 truncate">{cat}</span>
-                            <span className="text-lg font-semibold text-slate-700">{typeof hours === 'number' ? hours.toFixed(1) : hours}h</span>
-                        </div>
-                    ))}
+                    <div>
+                        <span className="text-xs text-slate-500 uppercase tracking-wide block mb-1">Meeting Hours</span>
+                        <span className="text-xl font-bold text-slate-900">
+                            {meetingHours.toFixed(1)}h
+                        </span>
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-500 uppercase tracking-wide block mb-1">Focus Hours</span>
+                        <span className="text-xl font-bold text-green-600">
+                            {focusHours.toFixed(1)}h
+                        </span>
+                    </div>
                 </div>
 
                 {/* Detailed List */}

@@ -124,6 +124,12 @@ export default function EntryReview() {
                 onChange={(newMeetings) => handleUpdate({ meetings: newMeetings })}
             />
 
+            <AllocationReview
+                allocations={entry.allocations}
+                meetings={entry.meetings}
+                onChange={(newAllocations) => handleUpdate({ allocations: newAllocations })}
+            />
+
             <ReflectionReview
                 verbatim={entry.verbatim}
                 signals={entry.narrative?.signals}
@@ -133,12 +139,6 @@ export default function EntryReview() {
                     disabled: isAnalyzing || !entry.verbatim,
                     isAnalyzing: isAnalyzing
                 }}
-            />
-
-            <AllocationReview
-                allocations={entry.allocations}
-                meetings={entry.meetings}
-                onChange={(newAllocations) => handleUpdate({ allocations: newAllocations })}
             />
 
             <NotesReview

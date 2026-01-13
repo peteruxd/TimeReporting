@@ -14,7 +14,7 @@ export default function NotesReview({ notes, wentWell, couldBeBetter, happinessS
 
     return (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6">Notes & Friction</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-6">Notes</h3>
 
             <div className="space-y-6">
                 {/* Reflection Fields */}
@@ -44,46 +44,47 @@ export default function NotesReview({ notes, wentWell, couldBeBetter, happinessS
                 </div>
 
                 {/* Happiness Index */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-slate-700">
                         Happiness Index (1-10)
                     </label>
-                    <div className="flex items-center justify-center gap-5 overflow-x-auto p-4">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
-                            // Determine color classes based on score
-                            let colorClasses = '';
-                            if (score <= 3) { // 1-3: Red
-                                colorClasses = happinessScore === score
-                                    ? 'bg-red-200 text-red-900 border-red-400 ring-2 ring-red-400 ring-offset-2'
-                                    : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100';
-                            } else if (score <= 6) { // 4-6: Orange
-                                colorClasses = happinessScore === score
-                                    ? 'bg-orange-200 text-orange-900 border-orange-400 ring-2 ring-orange-400 ring-offset-2'
-                                    : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100';
-                            } else if (score <= 8) { // 7-8: Yellow
-                                colorClasses = happinessScore === score
-                                    ? 'bg-yellow-200 text-yellow-900 border-yellow-400 ring-2 ring-yellow-400 ring-offset-2'
-                                    : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100';
-                            } else { // 9-10: Green
-                                colorClasses = happinessScore === score
-                                    ? 'bg-green-200 text-green-900 border-green-400 ring-2 ring-green-400 ring-offset-2'
-                                    : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100';
-                            }
+                    <div className="overflow-x-auto pb-2">
+                        <div className="flex justify-center gap-2 min-w-max px-2">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                                const isSelected = happinessScore === num;
+                                let bgColor = 'bg-slate-100 hover:bg-slate-200';
+                                let textColor = 'text-slate-600';
 
-                            return (
-                                <button
-                                    key={score}
-                                    onClick={() => onChange({ happinessScore: score })}
-                                    className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center text-sm font-bold border transition-all ${colorClasses}
-                                        ${happinessScore === score ? 'scale-110 shadow-sm' : ''}
-                                    `}
-                                >
-                                    {score}
-                                </button>
-                            );
-                        })}
+                                if (isSelected) {
+                                    if (num <= 3) {
+                                        bgColor = 'bg-red-500';
+                                        textColor = 'text-white';
+                                    } else if (num <= 6) {
+                                        bgColor = 'bg-orange-500';
+                                        textColor = 'text-white';
+                                    } else if (num <= 8) {
+                                        bgColor = 'bg-yellow-500';
+                                        textColor = 'text-white';
+                                    } else {
+                                        bgColor = 'bg-green-500';
+                                        textColor = 'text-white';
+                                    }
+                                }
+
+                                return (
+                                    <button
+                                        key={num}
+                                        onClick={() => onChange({ happinessScore: num })}
+                                        className={`w-10 h-10 rounded-lg font-semibold transition-all flex-shrink-0 ${bgColor} ${textColor} ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : ''
+                                            }`}
+                                    >
+                                        {num}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                    <div className="flex justify-between text-xs text-slate-400 mt-1 px-1">
+                    <div className="flex justify-between text-xs text-slate-400 px-2">
                         <span>Rough week</span>
                         <span>Best week ever</span>
                     </div>

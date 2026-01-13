@@ -37,8 +37,8 @@ const generatePastWeeks = () => {
                 autoNotes: []
             },
             allocations: [
-                { id: `p1-${i}`, name: "TimeInsights App", percentage: 40, color: "bg-blue-500" },
-                { id: `p2-${i}`, name: "Design System", percentage: 60, color: "bg-purple-500" }
+                { id: `p1-${i}`, name: "TimeInsights App", hours: 8, color: "bg-blue-500" },
+                { id: `p2-${i}`, name: "Design System", hours: 10, color: "bg-purple-500" }
             ],
             meetings: {
                 totalDuration: meetingHours,
@@ -82,9 +82,9 @@ export const DRAFT_WEEK = {
         ]
     },
     allocations: [
-        { id: "p1", name: "TimeInsights App", percentage: 40, color: "bg-blue-500", isOverrun: false },
-        { id: "p2", name: "Design System", percentage: 40, color: "bg-purple-500", isOverrun: true, warning: "Took longer than expected" },
-        { id: "p3", name: "Internal Infra", percentage: 20, color: "bg-indigo-500", isOverrun: false }
+        { id: "p1", name: "TimeInsights App", hours: 10, color: "bg-blue-500", isOverrun: false },
+        { id: "p2", name: "Design System", hours: 12, color: "bg-purple-500", isOverrun: true, warning: "Took longer than expected" },
+        { id: "p3", name: "Internal Infra", hours: 6, color: "bg-indigo-500", isOverrun: false }
     ],
     meetings: {
         totalDuration: 14.5, // hours

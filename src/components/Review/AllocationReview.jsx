@@ -1,47 +1,22 @@
 import React from 'react';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 
-import ReconciliationHint from './ReconciliationHint';
-
 export default function AllocationReview({ allocations, onChange, meetings }) {
-    const total = allocations.reduce((sum, item) => sum + item.percentage, 0);
-    const isValid = total === 100;
+    const workingHours = 40;
+    const meetingHours = meetings?.totalDuration || 0;
+
+    // Calculate total project hours
+    const totalProjectHours = allocations.reduce((sum, item) => sum + (item.hours || 0), 0);
+
+    // Total allocation = (project hours + meeting hours) / working hours * 100
+    const totalAllocation = ((totalProjectHours + meetingHours) / workingHours) * 100;
+    const isOverAllocated = totalAllocation > 100;
 
     const handleSliderChange = (id, newValue) => {
-        const value = Math.max(0, Math.min(100, parseInt(newValue) || 0));
-        const diff = value - allocations.find(p => p.id === id).percentage;
-
-        if (diff === 0) return;
-
-        let newAllocations = allocations.map(p => ({ ...p }));
-        const targetProject = newAllocations.find(p => p.id === id);
-        targetProject.percentage = value;
-
-        const others = newAllocations.filter(p => p.id !== id);
-        const totalOthers = others.reduce((sum, p) => sum + p.percentage, 0);
-
-        if (totalOthers > 0) {
-            others.forEach(p => {
-                const ratio = p.percentage / totalOthers;
-                p.percentage = Math.max(0, Math.round(p.percentage - (diff * ratio)));
-            });
-
-            // Fix rounding errors to ensure 100%
-            const newTotal = newAllocations.reduce((sum, p) => sum + p.percentage, 0);
-            if (newTotal !== 100) {
-                const remainder = 100 - newTotal;
-                const largestOther = others.reduce((prev, curr) => (prev.percentage > curr.percentage) ? prev : curr, others[0]);
-                if (largestOther) {
-                    largestOther.percentage += remainder;
-                } else {
-                    targetProject.percentage += remainder;
-                }
-            }
-        } else {
-            if (diff < 0 && others.length > 0) {
-                others[0].percentage += (100 - (value));
-            }
-        }
+        const hours = Math.max(0, Math.min(40, parseFloat(newValue) || 0));
+        const newAllocations = allocations.map(p =>
+            p.id === id ? { ...p, hours } : p
+        );
         onChange(newAllocations);
     };
 
@@ -50,37 +25,12 @@ export default function AllocationReview({ allocations, onChange, meetings }) {
     };
 
     const handleDelete = (id) => {
-        const toDelete = allocations.find(p => p.id === id);
-        const others = allocations.filter(p => p.id !== id);
-
-        if (others.length === 0) {
-            onChange([]);
-            return;
-        }
-
-        const totalOthers = others.reduce((sum, p) => sum + p.percentage, 0);
-        let newAllocations = others.map(p => ({ ...p }));
-
-        if (toDelete.percentage > 0 && totalOthers > 0) {
-            newAllocations.forEach(p => {
-                const share = p.percentage / totalOthers;
-                p.percentage += Math.round(toDelete.percentage * share);
-            });
-
-            const newTotal = newAllocations.reduce((sum, p) => sum + p.percentage, 0);
-            if (newTotal !== 100) {
-                newAllocations[0].percentage += (100 - newTotal);
-            }
-        } else if (toDelete.percentage > 0 && totalOthers === 0) {
-            newAllocations[0].percentage += toDelete.percentage;
-        }
-
-        onChange(newAllocations);
+        onChange(allocations.filter(p => p.id !== id));
     };
 
     const handleAdd = () => {
         const id = `p-${Date.now()}`;
-        onChange([...allocations, { id, name: "New Project", percentage: 0, color: "bg-slate-400" }]);
+        onChange([...allocations, { id, name: "New Project", hours: 0, color: "bg-slate-400" }]);
     };
 
     const COLOR_MAP = {
@@ -92,39 +42,16 @@ export default function AllocationReview({ allocations, onChange, meetings }) {
         'bg-red-500': '#ef4444',
     };
 
-
-    const handleSuggestionApply = () => {
-        // Demo logic: just boost "Project 2" (or "Design System" if exists)
-        // This is a placeholder for real logic
-        const newAllocations = allocations.map(p => ({ ...p }));
-        if (newAllocations.length > 1) {
-            // For demo, just modify the second project
-            newAllocations[1].percentage += 10;
-            // Naive normalization for demo
-            const total = newAllocations.reduce((sum, p) => sum + p.percentage, 0);
-            if (total !== 100) {
-                newAllocations[0].percentage -= 10;
-            }
-        }
-        onChange(newAllocations);
-    };
-
     return (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-6">Work Allocation</h3>
 
-            {meetings && (
-                <ReconciliationHint
-                    meetings={meetings}
-                    allocations={allocations}
-                    onApplySuggestion={handleSuggestionApply}
-                />
-            )}
-
-            <div className="mt-8 space-y-8">
+            <div className="space-y-8">
                 {allocations.map((project) => {
+                    const hours = project.hours || 0;
+                    const percentage = (hours / 40) * 100;
                     const colorHex = COLOR_MAP[project.color] || '#cbd5e1';
-                    const backgroundStyle = `linear-gradient(to right, ${colorHex} 0%, ${colorHex} ${project.percentage}%, #e2e8f0 ${project.percentage}%, #e2e8f0 100%)`;
+                    const backgroundStyle = `linear-gradient(to right, ${colorHex} 0%, ${colorHex} ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
 
                     return (
                         <div key={project.id} className="space-y-4 group">
@@ -152,15 +79,18 @@ export default function AllocationReview({ allocations, onChange, meetings }) {
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Estimated</span>
+                                    <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Hours</span>
                                     <div className="relative">
                                         <input
                                             type="number"
-                                            value={project.percentage}
+                                            step="0.5"
+                                            min="0"
+                                            max="40"
+                                            value={hours}
                                             onChange={(e) => handleSliderChange(project.id, e.target.value)}
-                                            className="w-16 text-right font-semibold text-slate-900 border-b border-slate-300 focus:border-blue-500 focus:outline-none bg-transparent"
+                                            className="w-16 text-right font-semibold text-slate-900 border-b border-slate-300 focus:border-blue-500 focus:outline-none bg-transparent pr-4"
                                         />
-                                        <span className="absolute right-0 top-0 text-slate-400 pointer-events-none">%</span>
+                                        <span className="absolute right-0 top-0 text-slate-400 pointer-events-none text-sm">h</span>
                                     </div>
                                 </div>
                             </div>
@@ -169,8 +99,9 @@ export default function AllocationReview({ allocations, onChange, meetings }) {
                                 id={`slider-${project.id}`}
                                 type="range"
                                 min="0"
-                                max="100"
-                                value={project.percentage}
+                                max="40"
+                                step="0.5"
+                                value={hours}
                                 onChange={(e) => handleSliderChange(project.id, e.target.value)}
                                 style={{ background: backgroundStyle }}
                                 className={`
@@ -200,18 +131,29 @@ export default function AllocationReview({ allocations, onChange, meetings }) {
                     Add Project Category
                 </button>
 
-                <div className={`flex justify-between items-center p-4 rounded-lg border ${isValid ? 'bg-slate-50 border-slate-200' : 'bg-red-50 border-red-200'
-                    }`}>
-                    <span className="text-sm text-slate-500 font-medium">Total Allocation</span>
-                    <span className={`text-lg font-bold ${isValid ? 'text-slate-900' : 'text-red-600'}`}>
-                        {total}%
-                    </span>
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center p-4 rounded-lg border bg-slate-50 border-slate-200">
+                        <div className="space-y-1">
+                            <span className="text-sm text-slate-500 font-medium">Total Allocation</span>
+                            <div className="text-xs text-slate-400">
+                                {totalProjectHours.toFixed(1)}h ({((totalProjectHours / workingHours) * 100).toFixed(1)}% projects) + {meetingHours.toFixed(1)}h ({((meetingHours / workingHours) * 100).toFixed(1)}% meetings) / {workingHours}h (total working hours)
+                            </div>
+                        </div>
+                        <span className={`text-2xl font-bold ${isOverAllocated ? 'text-red-700' : 'text-green-600'}`}>
+                            {totalAllocation.toFixed(1)}%
+                        </span>
+                    </div>
+                    {isOverAllocated && (
+                        <p className="text-sm text-red-600 text-center">
+                            ⚠️ Over-allocated: You've allocated more than your available working hours.
+                        </p>
+                    )}
+                    {totalAllocation < 80 && totalAllocation > 0 && (
+                        <p className="text-sm text-amber-600 text-center">
+                            💡 Under-utilized: Consider allocating more time to projects.
+                        </p>
+                    )}
                 </div>
-                {!isValid && (
-                    <p className="text-sm text-red-600 text-center">
-                        Total must equal 100%. Please adjust the sliders.
-                    </p>
-                )}
             </div>
         </section>
     );

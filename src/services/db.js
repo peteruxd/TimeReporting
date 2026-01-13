@@ -11,7 +11,17 @@ export const db = {
 
     getAll: () => {
         db.init();
-        return JSON.parse(localStorage.getItem(DB_KEY));
+        const data = JSON.parse(localStorage.getItem(DB_KEY));
+        // Simple migration check: 
+        // 1. if entries have 'projects' instead of 'allocations'
+        // 2. if entries have 'meetings' but missing 'categories'
+        if (data.entries.some(e => (e.projects && !e.allocations) || (e.meetings && !e.meetings.categories))) {
+            console.log("Detected stale data schema. Resetting DB...");
+            localStorage.removeItem(DB_KEY);
+            db.init();
+            return JSON.parse(localStorage.getItem(DB_KEY));
+        }
+        return data;
     },
 
     getUser: () => {

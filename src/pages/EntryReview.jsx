@@ -140,8 +140,17 @@ export default function EntryReview() {
 
             <NotesReview
                 notes={entry.narrative.autoNotes}
-                onChange={(newNotes) => {
-                    handleUpdate({ narrative: { ...entry.narrative, autoNotes: newNotes } });
+                wentWell={entry.narrative.wentWell}
+                couldBeBetter={entry.narrative.couldBeBetter}
+                happinessScore={entry.narrative.happinessScore}
+                onChange={(updates) => {
+                    // updates can contain: autoNotes, wentWell, couldBeBetter, happinessScore
+                    handleUpdate({
+                        narrative: {
+                            ...entry.narrative,
+                            ...updates
+                        }
+                    });
                 }}
             />
 

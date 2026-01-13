@@ -1,17 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react'; // Added useRef
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Calendar, ChevronRight, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts'; // Added ReferenceLine
+import { Calendar, ChevronRight, TrendingUp, GripHorizontal } from 'lucide-react'; // Added GripHorizontal
 import { db } from '../services/db';
 
 export default function Dashboard() {
     const [entries, setEntries] = useState([]);
     const [user, setUser] = useState(null);
+    const [focusThreshold, setFocusThreshold] = useState(20); // Default threshold
+    const [isDragging, setIsDragging] = useState(false);
+    const chartRef = useRef(null);
 
     useEffect(() => {
         setUser(db.getUser());
         setEntries(db.getEntries());
     }, []);
+
+    const handleMouseMove = (e) => {
+        if (isDragging && e && e.chartY) {
+            // Calculate value from chartY
+            // Approximating chart height (responsive container makes this tricky, but standard height is set)
+            // Or better: Recharts doesn't give unlimited power here.
+            // Let's use a simpler "click to set" or relative calculation if possible.
+            // We can infer the domain max from data (usually slightly above max value).
+            const containerHeight = 256; // h-64 = 16rem = 256px
+            const chartBottomPadding = 30; // Approximation
+            const chartTopPadding = 10;
+
+            // This is tricky without exact dimensions. 
+            // Let's try a simpler approach: Just update based on relative position if we can get it.
+        }
+    };
 
     // Helper to format date YYYY-MM-DD to MMMDD
     const formatDate = (dateStr) => {
@@ -40,8 +59,46 @@ export default function Dashboard() {
             };
         });
 
+    // Calculate max value for stable Y-axis
+    const maxFocus = Math.max(...chartData.map(d => d.focusHours), 40) + 5;
+
+    // Draggable logic using simple mouse events on the chart wrapper
+    const handleChartMouseDown = (e) => {
+        // Only trigger if close to the current threshold line visually? 
+        // Or just allow clicking anywhere to set/drag?
+        // Let's rely on the Recharts onClick for simplicity or custom overlay.
+        setIsDragging(true);
+    };
+
+    const handleChartMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    // Recharts interaction
+    const onChartMouseMove = (state) => {
+        if (isDragging && state) {
+            // Invert Y calculation: 
+            // chartY is pixels from top. 
+            // We need to map [paddingTop, height - paddingBottom] -> [max, 0]
+            // This is hard to get perfectly accurate without ref.
+            // Let's accept a slight approximation or use a different UI pattern for "setting" if this is too flaky.
+            // Actually, let's use the 'activeLabel' or any available hook if possible.
+            // ...
+            // Let's try a simpler robust way: 
+            // Just use the chart state to find the value if available, or fallback to visual approximation.
+            const plotHeight = 210; // Approx inner height
+            const plotTop = 10;
+            if (state.chartY !== undefined) {
+                const y = state.chartY;
+                const ratio = (plotHeight + plotTop - y) / plotHeight;
+                const newValue = ratio * maxFocus;
+                setFocusThreshold(Math.max(0, Math.min(maxFocus, newValue)));
+            }
+        }
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onMouseUp={handleChartMouseUp} onMouseLeave={handleChartMouseUp}>
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.name.split(' ')[0]}</h1>
@@ -67,26 +124,54 @@ export default function Dashboard() {
             </div>
 
             {/* Stats / Focus Trend (Full width for 12 weeks) */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 select-none">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-blue-500" />
                         Focus Trend (Last 12 Weeks)
                     </h3>
-                    <span className="text-xs text-slate-400">Based on Calendar</span>
+                    <div className="flex items-center gap-4">
+                        <span className="text-xs text-slate-500">Target: <span className="font-bold">{Math.round(focusThreshold)}h</span></span>
+                        <span className="text-xs text-slate-400">Drag line to adjust</span>
+                    </div>
                 </div>
-                <div className="h-64 w-full"> {/* Increased height slightly */}
+                <div
+                    className="h-64 w-full cursor-row-resize"
+                    onMouseDown={handleChartMouseDown}
+                >
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
+                            <BarChart
+                                data={chartData}
+                                onMouseMove={onChartMouseMove}
+                                onClick={(state) => {
+                                    if (state && state.chartY) {
+                                        // Also allow click-to-set
+                                        setIsDragging(true);
+                                        onChartMouseMove(state);
+                                        setIsDragging(false);
+                                    }
+                                }}
+                            >
                                 <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} interval={0} />
+                                <YAxis hide domain={[0, maxFocus]} />
                                 <Tooltip
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                 />
-                                <Bar dataKey="focusHours" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                                <ReferenceLine
+                                    y={focusThreshold}
+                                    stroke="#94a3b8"
+                                    strokeDasharray="3 3"
+                                    isFront={true}
+                                >
+                                </ReferenceLine>
+                                <Bar dataKey="focusHours" radius={[4, 4, 0, 0]}>
                                     {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#2563eb' : '#93c5fd'} />
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={entry.focusHours >= focusThreshold ? '#bbf7d0' : '#fecaca'}
+                                        />
                                     ))}
                                 </Bar>
                             </BarChart>

@@ -27,12 +27,31 @@ const generatePastWeeks = () => {
             endDate: end.toISOString().split('T')[0],
             status: "submitted",
             confidence: ["High", "Medium"][Math.floor(Math.random() * 2)],
-            summary: `Weekly report for Week ${weekNum}`,
-            projects: [
-                { name: "Time Reporting App", allocation: 40, color: "bg-blue-500" },
-                { name: "Design System", allocation: 60, color: "bg-purple-500" }
+            verbatim: `Summary of the week... ${weekNum}`,
+            narrative: {
+                text: `Weekly report for Week ${weekNum}`,
+                wentWell: "Team communication was great.",
+                couldBeBetter: "Could have planned Friday better.",
+                happinessScore: Math.floor(Math.random() * 3) + 7, // 7-10 range
+                signals: ["Signal 1", "Signal 2"],
+                autoNotes: []
+            },
+            allocations: [
+                { id: `p1-${i}`, name: "Time Reporting App", percentage: 40, color: "bg-blue-500" },
+                { id: `p2-${i}`, name: "Design System", percentage: 60, color: "bg-purple-500" }
             ],
-            meetings: { totalDuration: meetingHours }
+            meetings: {
+                totalDuration: meetingHours,
+                categories: {
+                    "Operational": meetingHours * 0.2,
+                    "Product-Design": meetingHours * 0.5,
+                    "Design-Engineering": meetingHours * 0.3
+                },
+                events: [
+                    { id: `m1-${i}`, title: "Weekly Sync", duration: 1.0, category: "Operational", date: "Mon" },
+                    { id: `m2-${i}`, title: "Design Review", duration: 2.0, category: "Product-Design", date: "Tue" }
+                ]
+            }
         });
     }
     return weeks;
@@ -49,6 +68,9 @@ export const DRAFT_WEEK = {
     aiNote: "Estimated from reflection and calendar",
     narrative: {
         text: "I spent most of the week deep diving into the new Time Reporting project. I feels like Project 2 took longer than expected because of the complexity in the reviews. Also had a lot of design syncs.",
+        wentWell: "Made good progress on the core architecture.",
+        couldBeBetter: "Meetings interrupted deep work sessions frequently.",
+        happinessScore: 7,
         signals: [
             "Worked across 3 projects",
             "Project 2 (Design System) took longer than expected",

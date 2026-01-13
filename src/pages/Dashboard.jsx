@@ -1,104 +1,93 @@
-import React, { useEffect, useState, useRef } from 'react'; // Added useRef
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts'; // Added ReferenceLine
-import { Calendar, ChevronRight, TrendingUp, GripHorizontal } from 'lucide-react'; // Added GripHorizontal
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, LabelList } from 'recharts';
+import { Calendar, ChevronRight, TrendingUp, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { db } from '../services/db';
 
 export default function Dashboard() {
     const [entries, setEntries] = useState([]);
     const [user, setUser] = useState(null);
-    const [focusThreshold, setFocusThreshold] = useState(20); // Default threshold
-    const [isDragging, setIsDragging] = useState(false);
-    const chartRef = useRef(null);
+    const [focusThreshold, setFocusThreshold] = useState(20);
+    const [isThresholdOpen, setIsThresholdOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
         setUser(db.getUser());
         setEntries(db.getEntries());
+
+        // Close dropdown when clicking outside
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsThresholdOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleMouseMove = (e) => {
-        if (isDragging && e && e.chartY) {
-            // Calculate value from chartY
-            // Approximating chart height (responsive container makes this tricky, but standard height is set)
-            // Or better: Recharts doesn't give unlimited power here.
-            // Let's use a simpler "click to set" or relative calculation if possible.
-            // We can infer the domain max from data (usually slightly above max value).
-            const containerHeight = 256; // h-64 = 16rem = 256px
-            const chartBottomPadding = 30; // Approximation
-            const chartTopPadding = 10;
-
-            // This is tricky without exact dimensions. 
-            // Let's try a simpler approach: Just update based on relative position if we can get it.
-        }
-    };
-
-    // Helper to format date YYYY-MM-DD to MMMDD
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
+    // Helper to format date range as "YYYY MMDD-MMDD"
+    const formatDateRange = (startDate, endDate) => {
+        if (!startDate || !endDate) return '';
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const parts = dateStr.split('-');
-        if (parts.length !== 3) return dateStr;
-        return `${months[parseInt(parts[1]) - 1]}${parts[2]}`;
+
+        const startParts = startDate.split('-');
+        const endParts = endDate.split('-');
+
+        if (startParts.length !== 3 || endParts.length !== 3) return `${startDate} — ${endDate}`;
+
+        const year = startParts[0];
+        const startMonth = months[parseInt(startParts[1]) - 1];
+        const startDay = startParts[2];
+        const endMonth = months[parseInt(endParts[1]) - 1];
+        const endDay = endParts[2];
+
+        return `${year} ${startMonth}${startDay}-${endMonth}${endDay}`;
     };
 
-    // Prepare chart data: Project allocation trends for submitted weeks
-    const chartData = entries
+    // Helper to truncate text
+    const truncateText = (text, maxLength) => {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substr(0, maxLength) + '...';
+    };
+
+    // Prepare shared data for Chart and History (Last 12 submitted entries)
+    const recentEntries = entries
         .filter(e => e.status === 'submitted')
-        .slice(0, 12) // Last 12 entries
+        .slice(0, 12); // Take last 12
+
+    // Sort for Chart: Oldest to Newest (Left to Right)
+    const chartData = [...recentEntries]
         .reverse()
         .map(entry => {
             const meetingHours = entry.meetings?.totalDuration || 0;
-            // Assume 40h standard work week for focus calculation
             const focusHours = Math.max(0, 40 - meetingHours);
-            const label = `${formatDate(entry.startDate)}-${formatDate(entry.endDate)}`;
+
+            // Split date range for two-line display
+            const startParts = entry.startDate.split('-');
+            const endParts = entry.endDate.split('-');
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            const year = startParts[0];
+            const startMonth = months[parseInt(startParts[1]) - 1];
+            const startDay = startParts[2];
+            const endMonth = months[parseInt(endParts[1]) - 1];
+            const endDay = endParts[2];
+            const dateRange = `${startMonth}${startDay}-${endMonth}${endDay}`;
 
             return {
-                name: label,
+                name: `${year}\n${dateRange}`, // Two-line label
+                year: year,
+                dateRange: dateRange,
                 focusHours: focusHours,
                 meetings: meetingHours
             };
         });
 
-    // Calculate max value for stable Y-axis
     const maxFocus = Math.max(...chartData.map(d => d.focusHours), 40) + 5;
 
-    // Draggable logic using simple mouse events on the chart wrapper
-    const handleChartMouseDown = (e) => {
-        // Only trigger if close to the current threshold line visually? 
-        // Or just allow clicking anywhere to set/drag?
-        // Let's rely on the Recharts onClick for simplicity or custom overlay.
-        setIsDragging(true);
-    };
-
-    const handleChartMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    // Recharts interaction
-    const onChartMouseMove = (state) => {
-        if (isDragging && state) {
-            // Invert Y calculation: 
-            // chartY is pixels from top. 
-            // We need to map [paddingTop, height - paddingBottom] -> [max, 0]
-            // This is hard to get perfectly accurate without ref.
-            // Let's accept a slight approximation or use a different UI pattern for "setting" if this is too flaky.
-            // Actually, let's use the 'activeLabel' or any available hook if possible.
-            // ...
-            // Let's try a simpler robust way: 
-            // Just use the chart state to find the value if available, or fallback to visual approximation.
-            const plotHeight = 210; // Approx inner height
-            const plotTop = 10;
-            if (state.chartY !== undefined) {
-                const y = state.chartY;
-                const ratio = (plotHeight + plotTop - y) / plotHeight;
-                const newValue = ratio * maxFocus;
-                setFocusThreshold(Math.max(0, Math.min(maxFocus, newValue)));
-            }
-        }
-    };
-
     return (
-        <div className="space-y-6" onMouseUp={handleChartMouseUp} onMouseLeave={handleChartMouseUp}>
+        <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.name.split(' ')[0]}</h1>
@@ -109,7 +98,7 @@ export default function Dashboard() {
                 </Link>
             </div>
 
-            {/* Insight Card (Moved Above) */}
+            {/* Insight Card */}
             <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl shadow-sm text-white relative overflow-hidden">
                 <div className="relative z-10">
                     <h3 className="font-semibold text-white/90 mb-1">Weekly Insight</h3>
@@ -123,37 +112,90 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Stats / Focus Trend (Full width for 12 weeks) */}
+            {/* Stats / Focus Trend */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 select-none">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-8">
                     <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-blue-500" />
                         Focus Trend (Last 12 Weeks)
                     </h3>
-                    <div className="flex items-center gap-4">
-                        <span className="text-xs text-slate-500">Target: <span className="font-bold">{Math.round(focusThreshold)}h</span></span>
-                        <span className="text-xs text-slate-400">Drag line to adjust</span>
+
+                    {/* Threshold Dropdown */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setIsThresholdOpen(!isThresholdOpen)}
+                            className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border border-slate-200"
+                        >
+                            <SlidersHorizontal className="w-4 h-4" />
+                            Target: {focusThreshold}h
+                            <ChevronDown className="w-3 h-3 text-slate-400" />
+                        </button>
+
+                        {isThresholdOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-20">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-slate-700">Focus Target</span>
+                                    <span className="text-sm font-bold text-blue-600">{focusThreshold}h</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="40"
+                                    step="1"
+                                    value={focusThreshold}
+                                    onChange={(e) => setFocusThreshold(Number(e.target.value))}
+                                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                />
+                                <div className="flex justify-between text-xs text-slate-400 mt-2">
+                                    <span>0h</span>
+                                    <span>40h</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-                <div
-                    className="h-64 w-full cursor-row-resize"
-                    onMouseDown={handleChartMouseDown}
-                >
+
+                <div className="h-64 w-full">
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={chartData}
-                                onMouseMove={onChartMouseMove}
-                                onClick={(state) => {
-                                    if (state && state.chartY) {
-                                        // Also allow click-to-set
-                                        setIsDragging(true);
-                                        onChartMouseMove(state);
-                                        setIsDragging(false);
-                                    }
-                                }}
-                            >
-                                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} interval={0} />
+                            <BarChart data={chartData} margin={{ top: 20, right: 10, bottom: 60, left: 0 }}>
+                                <XAxis
+                                    dataKey="name"
+                                    tick={({ x, y, payload }) => {
+                                        const lines = payload.value.split('\n');
+                                        return (
+                                            <g transform={`translate(${x},${y})`}>
+                                                <g transform="rotate(-45)">
+                                                    <text
+                                                        x={0}
+                                                        y={0}
+                                                        dy={0}
+                                                        textAnchor="end"
+                                                        fill="#64748b"
+                                                        fontSize={9}
+                                                        fontWeight="500"
+                                                    >
+                                                        {lines[0]}
+                                                    </text>
+                                                    <text
+                                                        x={0}
+                                                        y={10}
+                                                        dy={0}
+                                                        textAnchor="end"
+                                                        fill="#64748b"
+                                                        fontSize={9}
+                                                    >
+                                                        {lines[1]}
+                                                    </text>
+                                                </g>
+                                            </g>
+                                        );
+                                    }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    interval={0}
+                                    height={60}
+                                />
                                 <YAxis hide domain={[0, maxFocus]} />
                                 <Tooltip
                                     cursor={{ fill: 'transparent' }}
@@ -164,8 +206,7 @@ export default function Dashboard() {
                                     stroke="#94a3b8"
                                     strokeDasharray="3 3"
                                     isFront={true}
-                                >
-                                </ReferenceLine>
+                                />
                                 <Bar dataKey="focusHours" radius={[4, 4, 0, 0]}>
                                     {chartData.map((entry, index) => (
                                         <Cell
@@ -173,6 +214,7 @@ export default function Dashboard() {
                                             fill={entry.focusHours >= focusThreshold ? '#bbf7d0' : '#fecaca'}
                                         />
                                     ))}
+                                    <LabelList dataKey="focusHours" position="top" fill="#64748b" fontSize={10} formatter={(v) => `${v}h`} />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
@@ -185,39 +227,57 @@ export default function Dashboard() {
             </div>
 
             {/* Recent History */}
-            <div>
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">History</h2>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <ul className="divide-y divide-slate-100">
-                        {entries.map((entry) => (
-                            <li key={entry.id} className="hover:bg-slate-50 transition-colors">
-                                <Link to={`/entry/${entry.id}`} className="block px-6 py-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${entry.status === 'draft' ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
-                                                <Calendar className="w-5 h-5" />
-                                            </div>
-                                            <div className="ml-4">
-                                                <p className="text-sm font-medium text-slate-900">
-                                                    {entry.startDate} — {entry.endDate}
-                                                </p>
-                                                <p className="text-xs text-slate-500 mt-0.5 max-w-md truncate">
-                                                    {entry.status === 'draft' ? 'Draft • ' + entry.narrative?.text : entry.summary}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${entry.status === 'draft' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
-                                                }`}>
-                                                {entry.status === 'draft' ? 'Draft' : 'Submitted'}
-                                            </span>
-                                            <ChevronRight className="ml-4 w-5 h-5 text-slate-300" />
-                                        </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-blue-500" />
+                        Recent History
+                    </h3>
+                </div>
+                <div className="divide-y divide-slate-100">
+                    {recentEntries.map(entry => (
+                        <div key={entry.id}>
+                            <Link to={`/entry/${entry.id}`} className="block px-6 py-4 hover:bg-slate-50 transition-colors group">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${entry.status === 'submitted' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                                        <span className="font-medium text-slate-900">
+                                            {formatDateRange(entry.startDate, entry.endDate)}
+                                        </span>
+                                        {entry.status === 'draft' && (
+                                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Draft</span>
+                                        )}
                                     </div>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                                    <div className="flex items-center gap-4">
+                                        {/* Happiness Score Indicator */}
+                                        {entry.narrative?.happinessScore && (
+                                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold
+                                                ${entry.narrative.happinessScore <= 3 ? 'bg-red-50 text-red-700' :
+                                                    entry.narrative.happinessScore <= 6 ? 'bg-orange-50 text-orange-700' :
+                                                        entry.narrative.happinessScore <= 8 ? 'bg-yellow-50 text-yellow-700' :
+                                                            'bg-green-50 text-green-700'
+                                                }
+                                            `}>
+                                                <span>Score: {entry.narrative.happinessScore}</span>
+                                            </div>
+                                        )}
+                                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                    </div>
+                                </div>
+                                {/* Truncated Reflection Text */}
+                                {entry.narrative?.text && (
+                                    <p className="text-sm text-slate-500 pl-5 line-clamp-1">
+                                        {truncateText(entry.narrative.text, 80)}
+                                    </p>
+                                )}
+                            </Link>
+                        </div>
+                    ))}
+                    {entries.length === 0 && (
+                        <div className="p-8 text-center text-slate-500 text-sm">
+                            No entries found. Create your first weekly report!
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

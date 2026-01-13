@@ -15,6 +15,7 @@ export default function EntryReview() {
     const [entry, setEntry] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
     useEffect(() => {
         const data = db.getEntry(id);
@@ -31,17 +32,19 @@ export default function EntryReview() {
             db.saveEntry(newEntry);
             return newEntry;
         });
+        setHasChanges(true);
     };
 
     const handleSubmit = () => {
         db.submitEntry(entry.id);
+        setHasChanges(false);
         navigate('/dashboard');
     };
 
     const handleAnalyzeReflection = () => {
         if (!entry.verbatim) return;
         setIsAnalyzing(true);
-
+        // ... (rest of function is unchanged, but implicit handleUpdate will trigger dirty state)
         // Mock AI Delay
         setTimeout(() => {
             const text = entry.verbatim.toLowerCase();
@@ -157,6 +160,7 @@ export default function EntryReview() {
             <ReviewFooter
                 status={entry.status}
                 confidence={entry.confidence}
+                hasChanges={hasChanges}
                 onSubmit={handleSubmit}
                 onSaveDraft={() => navigate('/dashboard')}
             />

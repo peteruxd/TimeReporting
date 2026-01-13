@@ -4,12 +4,26 @@ import { Calendar, ShieldCheck } from 'lucide-react';
 export default function WeekHeader({ entry, onDateChange }) {
     const pickerRef = React.useRef(null);
 
+    const formatDateRange = (startDate, endDate) => {
+        if (!startDate || !endDate) return '';
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        const startParts = startDate.split('-');
+        const endParts = endDate.split('-');
+
+        if (startParts.length !== 3 || endParts.length !== 3) return `${startDate} — ${endDate}`;
+
+        const year = startParts[0];
+        const startMonth = months[parseInt(startParts[1]) - 1];
+        const startDay = startParts[2];
+        const endMonth = months[parseInt(endParts[1]) - 1];
+        const endDay = endParts[2];
+
+        return `${year} ${startMonth}${startDay}-${endMonth}${endDay}`;
+    };
+
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex items-center space-x-2 text-sm text-slate-500 mb-1">
-                <Calendar className="w-4 h-4" />
-                <span>Weekly Review</span>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     {/* Date Picker Trigger using showPicker() */}
@@ -25,7 +39,7 @@ export default function WeekHeader({ entry, onDateChange }) {
                             className="text-3xl font-bold text-slate-900 group-hover:underline decoration-slate-300 decoration-2 underline-offset-4 cursor-pointer bg-transparent border-none p-0 text-left"
                             title="Click to change week"
                         >
-                            {entry.startDate} — {entry.endDate}
+                            {formatDateRange(entry.startDate, entry.endDate)}
                         </button>
                     </div>
                 </div>
